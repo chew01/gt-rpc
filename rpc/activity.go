@@ -8,14 +8,22 @@ import (
 	"time"
 )
 
+// ActivityFactory creates a templated instance of client.Activity
 func ActivityFactory(gs *proxy.GameState) client.Activity {
+	// Convert start time from int type to Time type
 	st := time.Unix(0, gs.Startup.StartTime*int64(time.Millisecond))
-	var worldString, charString string
-	if gs.Player.GameWorld != "" {
-		worldString = gs.Player.GameWorld
+
+	var detailString, charString string
+
+	// Priority is given to activity
+	if gs.Activity.Name != "" && gs.Activity.EndTime == 0 {
+		detailString = gs.Activity.Name
+	} else if gs.Player.GameWorld != "" {
+		detailString = gs.Player.GameWorld
 	} else {
-		worldString = ""
+		detailString = ""
 	}
+
 	if gs.Character.Name != "" {
 		charString = fmt.Sprintf("%s (Lv. %d)", gs.Character.Name, gs.Character.Level)
 	} else {
@@ -23,7 +31,7 @@ func ActivityFactory(gs *proxy.GameState) client.Activity {
 	}
 
 	return client.Activity{
-		Details:    worldString,
+		Details:    detailString,
 		State:      charString,
 		LargeImage: "mainlogo",
 		LargeText:  "Guardian Tales",
@@ -39,6 +47,7 @@ func ActivityFactory(gs *proxy.GameState) client.Activity {
 	}
 }
 
+// ActivityHook refreshes the RPC activity on each game state update
 func ActivityHook(gs *proxy.GameState) {
 	act := ActivityFactory(gs)
 	utils.Must(client.SetActivity(act))
